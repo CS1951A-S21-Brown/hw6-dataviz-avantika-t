@@ -41,7 +41,7 @@ d3.csv("../data/netflix.csv").then(function(data) {
             //console.log(value);
             var val_as_string = String(value);
             genre_separator = val_as_string.split(",");
-            //console.log(genre_separator);
+            console.log(genre_separator);
             var genres = Object.values(genre_separator);
             //console.log(genres);
             console.log(genres);
@@ -109,7 +109,7 @@ d3.csv("../data/netflix.csv").then(function(data) {
         .style("text-anchor", "middle")
         .style("font-size", 15)
         .text("Number of Titles per Genre on Netflix");
-        
+
     // x-axis label
     svg_1.append("text")
     .attr("transform", `translate(${(graph_1_width - margin.left - margin.right) / 2},
