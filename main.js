@@ -66,6 +66,9 @@ d3.csv("../data/netflix.csv").then(function(data) {
     svg.append("g")
         .call(d3.axisLeft(y).tickSize(0).tickPadding(10));
 
+    // adds x-axis label===> FIGURE THIS OUT???????
+    svg.append("g").attr("class", "axis").attr("transform", "translate(0," + graph_1_height + ")").call(d3.axisBottom(x));
+
     // defines color scale
     let color = d3.scaleOrdinal()
         .domain(final_data.map(function(d) { return d["listed_in"] }))
@@ -137,6 +140,7 @@ let countRef2 = svg2.append("g");
 d3.csv("../data/netflix.csv").then(function(data2) {  
     data2 = cleanData(data2, function(a,b) { return parseInt(b.count) - parseInt(a.count)} , NUM_EXAMPLES); 
 
+    //filter data to account for just movies
     var filter_movie = [];
     for (i=0; i < data2.length; i++){
         if (data2[i].type == "Movie"){
@@ -145,6 +149,7 @@ d3.csv("../data/netflix.csv").then(function(data2) {
     }
     //console.log(filter_movie);
 
+    //create a dictionary with key as release year and value as a list of all durations of movies released in that year
     var dict = {};
     for (i=0; i < filter_movie.length; i++){
         year = filter_movie[i]["release_year"];
@@ -157,4 +162,74 @@ d3.csv("../data/netflix.csv").then(function(data2) {
     }
     //console.log(dict);
 
+    let avg_duration = [];
+    //clean the list inside the dict to remove string and "mins"
+    Object.keys(dict).forEach(function(key) {
+        var dur = dict[key].toString().match(/(\d|, )+/g).map(function(d){
+            return parseInt(d, 10);
+        })
+        avg_duration.push(dur.reduce((a,b)=> a+b, 0) / dur.length);
+        //console.log(typeof(avg_duration));
+    });
+
+    var runtime_year = [];
+    for (r = 0; r < Object.keys(dict).length; r++){
+        d2 = {};
+        d2["release_year"] = Object.keys(dict)[r];
+        d2["avg_duration"] = avg_duration[r];
+        runtime_year.push(d2);
+    }
+    //console.log(runtime_year);
+
+    // create a linear scale for the x axis (release year)
+    let x = d3.scaleLinear()
+        .domain([0, d3.max(runtime_year, function(d) { return parseInt(d.release_year); })])
+        .range([0, graph_2_width - margin.left - margin.right]);
+
+    // create a scale band for the y axis (avg duration)
+    let y =  d3.scaleBand()
+        .domain(runtime_year.map(function(d) { return d["avg_duration"] }))
+        .range([0, graph_2_height - margin.top - margin.bottom])
+        .padding(0.1);
+
+    // adds x-axis label
+    svg2.append("g")
+        .attr("class", "axis")
+        .attr("transform", "translate(0," + graph_2_height + ")")
+        .call(x);
+    
+    // adds y-axis label
+    svg2.append("g")
+        .attr("class", "axis")
+        .call(y);
+
+    const graph_line = svg2.selectAll("lines").data(runtime_year).enter().append("g");
+
+    graph_line.append("path")
+        .attr("fill", "none")
+        .attr("stroke", "steelblue")
+        .attr("stroke-width", 1.5)
+        .attr("d", function(d) { return d.avg_duration});
+
+    // chart title
+    svg2.append("text")
+        .attr("transform", `translate(${(graph_2_width - margin.left - margin.right) / 2}, ${-10})`)
+        .style("text-anchor", "middle")
+        .style("font-size", 20)
+        .text("Average Runtime of Movies by Release Year");
+
+    // x-axis label
+    svg2.append("text")
+        .attr("transform", `translate(${(graph_2_width - margin.left - margin.right) / 2},
+                                    ${(graph_2_height - margin.top - margin.bottom) + 15})`)
+        .style("text-anchor", "middle")
+        .style("font-size", 15)
+        .text("Release Year");
+
+    // y-axis label
+    svg2.append("text")
+        .attr("transform", `translate(-190, ${(graph_2_height - margin.top - margin.bottom) / 2})`)
+        .style("text-anchor", "middle")
+        .style("font-size", 15)
+        .text("Average Runtime");
 });
