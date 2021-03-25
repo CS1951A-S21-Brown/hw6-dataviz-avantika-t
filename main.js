@@ -228,3 +228,31 @@ d3.csv("../data/netflix.csv").then(function(data2) {
         .style("font-size", 15)
         .text("Average Runtime");
 });
+
+let svg3 = d3.select("#graph3")
+    .append("svg")
+    .attr("width", graph_3_width)     
+    .attr("height", graph_3_height)     
+    .append("g")
+    .attr("transform", `translate(${margin.left}, ${margin.top})`); 
+
+// ref to count svg group --> avg runtime of movies
+let countRef3 = svg3.append("g");
+
+d3.csv("../data/netflix.csv").then(function(data3) {  
+    data3 = cleanData(data3, function(a,b) { return parseInt(b.count) - parseInt(a.count)} , NUM_EXAMPLES); 
+
+    //filter data to account for just movies
+    var filter_data = [];
+    for (i=0; i < data3.length; i++){
+        if (data3[i].type == "Movie"){
+            if (!(data3[i].director == null)){
+                if (!(data3[i].cast == null)){
+                    filter_data.push(data3[i]);
+                }
+            }
+        }
+    }
+    console.log(filter_data);
+
+});
