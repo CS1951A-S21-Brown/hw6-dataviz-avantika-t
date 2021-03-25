@@ -1,13 +1,13 @@
 // Add your JavaScript code here
 const MAX_WIDTH = Math.max(1080, window.innerWidth);
 const MAX_HEIGHT = 720;
-const margin = {top: 40, right: 100, bottom: 40, left: 300};
+const margin = {top: 40, right: 100, bottom: 40, left: 400};
 const NUM_EXAMPLES = 6234; //no. of data entries
 const NUM_GENRES = 42; //number of distinct genres
 
 // Assumes the same graph width, height dimensions as the example dashboard. Feel free to change these if you'd like
 let graph_1_width = (MAX_WIDTH / 2) + 300, graph_1_height = 600;
-let graph_2_width = (MAX_WIDTH / 2) - 10, graph_2_height = 275;
+let graph_2_width = (MAX_WIDTH / 2) + 300, graph_2_height = 300;
 let graph_3_width = MAX_WIDTH / 2, graph_3_height = 575;
 
 let svg = d3.select("#graph1")
@@ -66,7 +66,7 @@ d3.csv("../data/netflix.csv").then(function(data) {
     svg.append("g")
         .call(d3.axisLeft(y).tickSize(0).tickPadding(10));
 
-    // adds x-axis label===> FIGURE THIS OUT???????
+    // adds x-axis label
     svg.append("g").attr("class", "axis").attr("transform", "translate(0," + graph_1_height + ")").call(d3.axisBottom(x));
 
     // defines color scale
@@ -128,7 +128,7 @@ d3.csv("../data/netflix.csv").then(function(data) {
 });
 
 let svg2 = d3.select("#graph2")
-    .append("svg2") //or svg???
+    .append("svg")
     .attr("width", graph_2_width)     
     .attr("height", graph_2_height)     
     .append("g")
@@ -147,7 +147,6 @@ d3.csv("../data/netflix.csv").then(function(data2) {
             filter_movie.push(data2[i]);
         }
     }
-    //console.log(filter_movie);
 
     //create a dictionary with key as release year and value as a list of all durations of movies released in that year
     var dict = {};
@@ -160,7 +159,6 @@ d3.csv("../data/netflix.csv").then(function(data2) {
             dict[year].push(filter_movie[i]["duration"]);
         }
     }
-    //console.log(dict);
 
     let avg_duration = [];
     //clean the list inside the dict to remove string and "mins"
@@ -169,7 +167,6 @@ d3.csv("../data/netflix.csv").then(function(data2) {
             return parseInt(d, 10);
         })
         avg_duration.push(dur.reduce((a,b)=> a+b, 0) / dur.length);
-        //console.log(typeof(avg_duration));
     });
 
     var runtime_year = [];
@@ -179,37 +176,35 @@ d3.csv("../data/netflix.csv").then(function(data2) {
         d2["avg_duration"] = avg_duration[r];
         runtime_year.push(d2);
     }
-    //console.log(runtime_year);
 
     // create a linear scale for the x axis (release year)
     let x = d3.scaleLinear()
-        .domain([0, d3.max(runtime_year, function(d) { return parseInt(d.release_year); })])
+        .domain([d3.min(runtime_year, function(d) { return d.release_year; }), d3.max(runtime_year, function(d) { return d.release_year; })])
         .range([0, graph_2_width - margin.left - margin.right]);
 
     // create a scale band for the y axis (avg duration)
-    let y =  d3.scaleBand()
-        .domain(runtime_year.map(function(d) { return d["avg_duration"] }))
-        .range([0, graph_2_height - margin.top - margin.bottom])
-        .padding(0.1);
+    let y = d3.scaleLinear()
+        .domain([0, d3.max(runtime_year, function(d) { return d.avg_duration; })])
+        .range([graph_2_height - margin.top - margin.bottom, 0]);
 
     // adds x-axis label
     svg2.append("g")
-        .attr("class", "axis")
-        .attr("transform", "translate(0," + graph_2_height + ")")
-        .call(x);
+        .attr("transform", `translate(0, ${graph_2_height - margin.top - margin.bottom} )`)
+        .call(d3.axisBottom(x));
     
     // adds y-axis label
     svg2.append("g")
-        .attr("class", "axis")
-        .call(y);
+        .call(d3.axisLeft(y));
 
-    const graph_line = svg2.selectAll("lines").data(runtime_year).enter().append("g");
-
-    graph_line.append("path")
+    svg2.append("path")
+        .data([runtime_year])
+        .attr("class", "line")
         .attr("fill", "none")
-        .attr("stroke", "steelblue")
-        .attr("stroke-width", 1.5)
-        .attr("d", function(d) { return d.avg_duration});
+        .attr("stroke", "purple")
+        .attr("stroke-width", 2)
+        .attr("d", d3.line()
+        .x(function(d) {return x(d.release_year)})
+        .y(function(d) {return y(d.avg_duration)}));
 
     // chart title
     svg2.append("text")
@@ -221,14 +216,14 @@ d3.csv("../data/netflix.csv").then(function(data2) {
     // x-axis label
     svg2.append("text")
         .attr("transform", `translate(${(graph_2_width - margin.left - margin.right) / 2},
-                                    ${(graph_2_height - margin.top - margin.bottom) + 15})`)
+                                    ${(graph_2_height - margin.top - margin.bottom) + 40})`)
         .style("text-anchor", "middle")
         .style("font-size", 15)
         .text("Release Year");
 
     // y-axis label
     svg2.append("text")
-        .attr("transform", `translate(-190, ${(graph_2_height - margin.top - margin.bottom) / 2})`)
+        .attr("transform", `translate(-120, ${(graph_2_height - margin.top - margin.bottom) / 2})`)
         .style("text-anchor", "middle")
         .style("font-size", 15)
         .text("Average Runtime");
