@@ -227,6 +227,58 @@ d3.csv("../data/netflix.csv").then(function(data2) {
         .style("text-anchor", "middle")
         .style("font-size", 15)
         .text("Average Runtime");
+
+    // This allows to find the closest X index of the mouse:
+    var b = d3.bisector(function(d) { return d.release_year; }).left;
+
+    // Create the circle that travels along the curve of chart
+    var traveler = svg2.append('g')
+        .append('circle')
+        .style("fill", "none")
+        .attr("stroke", "darkgreen")
+        .attr('r', 5)
+        .style("opacity", 0);
+
+    // Create the text that travels along the curve of chart
+    var traveler_text = svg2.append('g')
+        .append('text')
+        .style("opacity", 0)
+        .attr("text-anchor", "left")
+        .attr("alignment-baseline", "middle")
+        .style("font-weight", 450);
+
+    // What happens when the mouse move -> show the annotations at the right positions.
+    function mouseover() {
+        traveler.style("opacity", 1);
+        traveler_text.style("opacity",1);
+    };
+
+    function mousemove() {
+        // recover coordinate we need
+        var x0 = x.invert(d3.mouse(this)[0]);
+        var i = b(runtime_year, x0, 1);
+        selectedData = runtime_year[i];
+        traveler.attr("cx", x(selectedData["release_year"])).attr("cy", y(selectedData["avg_duration"]));
+        traveler_text.html("( x:" + selectedData["release_year"] + "  ,  " + "y:" + selectedData["avg_duration"] + " )")
+                .attr("x", x(selectedData["release_year"])+15)
+                .attr("y", y(selectedData["avg_duration"]));
+    };
+
+    function mouseout() {
+        traveler.style("opacity", 0);
+        traveler_text.style("opacity", 0);
+    };
+
+    // Create a rect on top of the svg area: this rectangle recovers mouse position
+    svg2.append('rect')
+        .style("fill", "none")
+        .style("pointer-events", "all")
+        .attr('width', graph_2_width)
+        .attr('height', graph_2_height)
+        .on('mouseover', mouseover)
+        .on('mousemove', mousemove)
+        .on('mouseout', mouseout);
+
 });
 
 let svg3 = d3.select("#graph3")
@@ -246,13 +298,55 @@ d3.csv("../data/netflix.csv").then(function(data3) {
     var filter_data = [];
     for (i=0; i < data3.length; i++){
         if (data3[i].type == "Movie"){
-            if (!(data3[i].director == null)){
-                if (!(data3[i].cast == null)){
+            if (!(data3[i].director == "")){
+                if (!(data3[i].cast == "")){
                     filter_data.push(data3[i]);
                 }
             }
         }
     }
-    console.log(filter_data);
+    //console.log(filter_data);
+
+    // split directors and actors on commas 
+    var split_cast = [];
+    var split_director = [];
+    for (i = 0; i < filter_data.length; i++) {
+        split_cast.push(filter_data[i]["cast"].split(','));
+        split_director.push(filter_data[i]["director"].split(','));
+    }
+    //console.log(split_director);
+
+    //create a dictionary with the key as a director and value as actor who has worked with that director
+    var dir_cast = [];
+    for (i = 0; i < split_director.length; i++) {
+        var dir = split_director[i];
+        var actor = split_cast[i];
+        for (j = 0; j < dir.length; j++) {
+            for (k = 0; k < actor.length; k++) {
+                dir_cast.push(
+                    {"director": dir[j],
+                    "actor": actor[k]}
+                );
+            } 
+        } 
+    }
+    //console.log(dir_cast);   
+
+    var dict = [];
+    for (i=0; i < Object.keys(dir_cast).length; i++){
+        direc = Object.keys(dir_cast)[i];
+        act = Object.values(dir_cast)[i];
+        var el = [];
+        if (!(direc in dict)){
+            if (!(act in dict)){
+                el.push(direc, act);
+                dict[el] = 1;
+            }
+        } else if (direc in dict){
+            if (act in dict){
+                dict[el]++;
+            }
+        }
+    }
 
 });
