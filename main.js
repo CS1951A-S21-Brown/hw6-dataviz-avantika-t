@@ -1,14 +1,18 @@
 // Add your JavaScript code here
 const MAX_WIDTH = Math.max(1080, window.innerWidth);
 const MAX_HEIGHT = 720;
-const margin = {top: 40, right: 100, bottom: 40, left: 400};
+// const margin = {top: 40, right: 100, bottom: 40, left: 400};
+const margin = {top: 40, right: 150, bottom: 40, left: 300};
 const NUM_EXAMPLES = 6234; //no. of data entries
 const NUM_GENRES = 42; //number of distinct genres
 
 // Assumes the same graph width, height dimensions as the example dashboard. Feel free to change these if you'd like
-let graph_1_width = (MAX_WIDTH / 2) + 300, graph_1_height = 600;
-let graph_2_width = (MAX_WIDTH / 2) + 300, graph_2_height = 300;
-let graph_3_width = MAX_WIDTH / 2, graph_3_height = 575;
+// let graph_1_width = (MAX_WIDTH / 2) + 300, graph_1_height = 600;
+// let graph_2_width = (MAX_WIDTH / 2) + 300, graph_2_height = 300;
+// let graph_3_width = MAX_WIDTH / 2, graph_3_height = 575;
+let graph_1_width = (MAX_WIDTH / 2) - 10, graph_1_height = 500;
+let graph_2_width = (MAX_WIDTH / 2) + 450, graph_2_height = 500;
+let graph_3_width = MAX_WIDTH / 2, graph_3_height = 500;
 
 let svg = d3.select("#graph1")
     .append("svg")
@@ -74,12 +78,6 @@ d3.csv("../data/netflix.csv").then(function(data) {
         .domain(final_data.map(function(d) { return d["listed_in"] }))
         .range(d3.quantize(d3.interpolateHcl("#d66000", "#a9a9b4"), NUM_GENRES));
 
-    /*
-    This next line does the following:
-        1. Select all desired elements in the DOM
-        2. Count and parse the data values
-        3. Create new, data-bound elements for each data value
-    */
     let bars = svg.selectAll("rect").data(final_data); 
 
     bars.enter()
@@ -89,7 +87,8 @@ d3.csv("../data/netflix.csv").then(function(data) {
         .attr("x", x(0))
         .attr("y", function(d) { return y(d["listed_in"]); })
         .attr("width", function(d) { return x(parseInt(d.count)); })
-        .attr("height",  y.bandwidth());
+        .attr("height",  y.bandwidth())
+        .attr("fill", "MediumSeaGreen");
 
     let counts = countRef.selectAll("text").data(final_data); 
 
@@ -101,11 +100,11 @@ d3.csv("../data/netflix.csv").then(function(data) {
         .attr("y", function(d) { return y(d.listed_in) + 9})
         .style("text-anchor", "start")
         .text(function(d) { return parseInt(d.count)})
-        .style("font", "11px Helvetica");
+        .style("font", "9px Helvetica");
     
     // chart title
     svg.append("text")
-        .attr("transform", `translate(${(graph_1_width - margin.left - margin.right) / 2}, ${-10})`)
+        .attr("transform", `translate(${(graph_1_width - margin.left - margin.right) / 2}, ${-20})`)
         .style("text-anchor", "middle")
         .style("font-size", 20)
         .text("Number of Titles per Genre on Netflix");
@@ -120,12 +119,18 @@ d3.csv("../data/netflix.csv").then(function(data) {
 
     // y-axis label
     svg.append("text")
-        .attr("transform", `translate(-190, ${(graph_1_height - margin.top - margin.bottom) / 2})`)
+        .attr("transform", `translate(-200, ${(graph_1_height - margin.top - margin.bottom) / 2})`)
         .style("text-anchor", "middle")
         .style("font-size", 15)
         .text("Genres on Netflix");
+        //-190
 
 });
+
+function change_clr(colour){
+    d3.select("#graph1").selectAll("rect")
+    .transition().duration(2000).style("fill", colour);
+}
 
 let svg2 = d3.select("#graph2")
     .append("svg")
@@ -200,7 +205,7 @@ d3.csv("../data/netflix.csv").then(function(data2) {
         .data([runtime_year])
         .attr("class", "line")
         .attr("fill", "none")
-        .attr("stroke", "purple")
+        .attr("stroke", "darkcyan")
         .attr("stroke-width", 2)
         .attr("d", d3.line()
         .x(function(d) {return x(d.release_year)})
@@ -257,11 +262,10 @@ d3.csv("../data/netflix.csv").then(function(data2) {
         // recover coordinate we need
         var x0 = x.invert(d3.mouse(this)[0]);
         var i = b(runtime_year, x0, 1);
-        selectedData = runtime_year[i];
-        traveler.attr("cx", x(selectedData["release_year"])).attr("cy", y(selectedData["avg_duration"]));
-        traveler_text.html("( x:" + selectedData["release_year"] + "  ,  " + "y:" + selectedData["avg_duration"] + " )")
-                .attr("x", x(selectedData["release_year"])+15)
-                .attr("y", y(selectedData["avg_duration"]));
+        traveler.attr("cx", x(runtime_year[i]["release_year"])).attr("cy", y(runtime_year[i]["avg_duration"]));
+        traveler_text.html("( x:" + runtime_year[i]["release_year"] + "  ,  " + "y:" + runtime_year[i]["avg_duration"] + " )")
+                .attr("x", x(runtime_year[i]["release_year"])+15)
+                .attr("y", y(runtime_year[i]["avg_duration"]));
     };
 
     function mouseout() {
@@ -323,30 +327,102 @@ d3.csv("../data/netflix.csv").then(function(data3) {
         var actor = split_cast[i];
         for (j = 0; j < dir.length; j++) {
             for (k = 0; k < actor.length; k++) {
-                dir_cast.push(
-                    {"director": dir[j],
-                    "actor": actor[k]}
-                );
+                abc = [];
+                abc.push(dir[j], actor[k]);
+                if (abc in dir_cast){
+                    dir_cast[abc]++;
+                } else {
+                    dir_cast[abc] = 1;
+                }
             } 
         } 
     }
-    //console.log(dir_cast);   
+    //console.log(Object.keys(dir_cast).length);
 
-    var dict = [];
-    for (i=0; i < Object.keys(dir_cast).length; i++){
-        direc = Object.keys(dir_cast)[i];
-        act = Object.values(dir_cast)[i];
-        var el = [];
-        if (!(direc in dict)){
-            if (!(act in dict)){
-                el.push(direc, act);
-                dict[el] = 1;
-            }
-        } else if (direc in dict){
-            if (act in dict){
-                dict[el]++;
-            }
-        }
+    var pair = Object.keys(dir_cast).map(function(key){ 
+        return [key, dir_cast[key]];
+    });
+
+    pair.sort(function(a, b) { return b[1] - a[1];});
+    //console.log(top_pair);
+
+    var top_pairs = [];
+    for (i = 0; i < 40; i++){
+        final_pairs = {};
+        final_pairs["pair"] = pair[i][0];
+        final_pairs["count"] = pair[i][1];
+        top_pairs.push(final_pairs);
     }
+    //console.log(top_pairs);
+
+    // create a linear scale for the x axis (count)
+    let x = d3.scaleLinear()
+        .domain([0, d3.max(top_pairs, function(d) { return parseInt(d.count); })])
+        .range([0, graph_3_width - margin.left - margin.right]);
+
+    // adds x-axis label
+    svg3.append("g")
+        .attr("transform", `translate(0, ${graph_3_height - margin.top - margin.bottom} )`)
+        .call(d3.axisBottom(x));
+
+    // create a scale band for the y axis (top pairs)
+    let y =  d3.scaleBand()
+        .domain(top_pairs.map(function(d) { return d["pair"] }))
+        .range([0, graph_3_height - margin.top - margin.bottom])
+        .padding(0.1);
+
+    // adds y-axis label
+    svg3.append("g")
+        .call(d3.axisLeft(y).tickSize(0).tickPadding(10));
+
+    // defines color scale
+    let color = d3.scaleOrdinal()
+        .domain(top_pairs.map(function(d) { return d["pair"] }))
+        .range(d3.quantize(d3.interpolateHcl("#fafa6e", "#2A4858"), 40));
+
+    let bars = svg3.selectAll("rect").data(top_pairs); 
+
+    bars.enter()
+        .append("rect")
+        .merge(bars)
+        .attr("fill", function(d) { return color(d["pair"]); })
+        .attr("x", x(0))
+        .attr("y", function(d) { return y(d["pair"]); })
+        .attr("width", function(d) { return x(parseInt(d.count)); })
+        .attr("height",  y.bandwidth());
+
+    let counts = countRef3.selectAll("text").data(top_pairs); 
+
+    // Renders the text elements on the DOM
+    counts.enter()
+        .append("text")
+        .merge(counts)
+        .attr("x", function(d) { return x(parseInt(d.count)) + 10; })
+        .attr("y", function(d) { return y(d.pair) + 9})
+        .style("text-anchor", "start")
+        .text(function(d) { return parseInt(d.count)})
+        .style("font", "9px Helvetica");
+    
+    // chart title
+    svg3.append("text")
+        .attr("transform", `translate(${(graph_3_width - margin.left - margin.right) / 2}, ${-10})`)
+        .style("text-anchor", "middle")
+        .style("font-size", 20)
+        .text("Top Director-Actor Pairs by Number of Movies Made");
+
+    // x-axis label
+    svg3.append("text")
+        .attr("transform", `translate(${(graph_3_width - margin.left - margin.right) / 2},
+                                    ${(graph_3_height - margin.top - margin.bottom) + 40})`)
+        .style("text-anchor", "middle")
+        .style("font-size", 15)
+        .text("Number of Movies Made");
+
+    // y-axis label
+    svg3.append("text")
+        .attr("transform", `translate(-220, ${(graph_3_height - margin.top - margin.bottom) / 2})`)
+        .style("text-anchor", "middle")
+        .style("font-size", 15)
+        .text("Top Pairs");
 
 });
