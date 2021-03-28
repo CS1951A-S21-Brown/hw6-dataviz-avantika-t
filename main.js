@@ -1,15 +1,11 @@
 // Add your JavaScript code here
 const MAX_WIDTH = Math.max(1080, window.innerWidth);
 const MAX_HEIGHT = 720;
-// const margin = {top: 40, right: 100, bottom: 40, left: 400};
 const margin = {top: 40, right: 150, bottom: 40, left: 300};
 const NUM_EXAMPLES = 6234; //no. of data entries
 const NUM_GENRES = 42; //number of distinct genres
 
 // Assumes the same graph width, height dimensions as the example dashboard. Feel free to change these if you'd like
-// let graph_1_width = (MAX_WIDTH / 2) + 300, graph_1_height = 600;
-// let graph_2_width = (MAX_WIDTH / 2) + 300, graph_2_height = 300;
-// let graph_3_width = MAX_WIDTH / 2, graph_3_height = 575;
 let graph_1_width = (MAX_WIDTH / 2) - 10, graph_1_height = 500;
 let graph_2_width = (MAX_WIDTH / 2) + 450, graph_2_height = 500;
 let graph_3_width = MAX_WIDTH / 2, graph_3_height = 500;
@@ -292,13 +288,13 @@ let svg3 = d3.select("#graph3")
     .append("g")
     .attr("transform", `translate(${margin.left}, ${margin.top})`); 
 
-// ref to count svg group --> avg runtime of movies
+// ref to count svg group --> avg no of movies
 let countRef3 = svg3.append("g");
 
 d3.csv("../data/netflix.csv").then(function(data3) {  
     data3 = cleanData(data3, function(a,b) { return parseInt(b.count) - parseInt(a.count)} , NUM_EXAMPLES); 
 
-    //filter data to account for just movies
+    //filter data to account for just movies where dir and cast not null
     var filter_data = [];
     for (i=0; i < data3.length; i++){
         if (data3[i].type == "Movie"){
@@ -309,7 +305,6 @@ d3.csv("../data/netflix.csv").then(function(data3) {
             }
         }
     }
-    //console.log(filter_data);
 
     // split directors and actors on commas 
     var split_cast = [];
@@ -318,7 +313,6 @@ d3.csv("../data/netflix.csv").then(function(data3) {
         split_cast.push(filter_data[i]["cast"].split(','));
         split_director.push(filter_data[i]["director"].split(','));
     }
-    //console.log(split_director);
 
     //create a dictionary with the key as a director and value as actor who has worked with that director
     var dir_cast = [];
@@ -337,14 +331,12 @@ d3.csv("../data/netflix.csv").then(function(data3) {
             } 
         } 
     }
-    //console.log(Object.keys(dir_cast).length);
 
     var pair = Object.keys(dir_cast).map(function(key){ 
         return [key, dir_cast[key]];
     });
 
     pair.sort(function(a, b) { return b[1] - a[1];});
-    //console.log(top_pair);
 
     var top_pairs = [];
     for (i = 0; i < 40; i++){
@@ -353,7 +345,6 @@ d3.csv("../data/netflix.csv").then(function(data3) {
         final_pairs["count"] = pair[i][1];
         top_pairs.push(final_pairs);
     }
-    //console.log(top_pairs);
 
     // create a linear scale for the x axis (count)
     let x = d3.scaleLinear()
